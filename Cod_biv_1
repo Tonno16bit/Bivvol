@@ -1,0 +1,149 @@
+/*
+* Arduino Wireless Communication Tutorial
+*     Example 2 - Transmitter Code
+*                
+* by Dejan Nedelkovski, www.HowToMechatronics.com
+* 
+* Library: TMRh20/RF24, https://github.com/tmrh20/RF24/
+*/
+#include <Arduino.h>
+#include <U8x8lib.h>
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <RF24.h>
+
+U8X8_SSD1306_128X64_NONAME_HW_I2C u8x8(/* reset=*/ U8X8_PIN_NONE);
+RF24 radio(7, 8); // CE, CSN
+const byte addresses[][6] = {"00001", "00002"};
+char messaggio[16];
+
+char messaggioricevuto[16];
+int i=0;
+
+void setup() {
+  u8x8.begin();
+  u8x8.setPowerSave(0);
+  Serial.begin(9600);
+  radio.begin();
+  radio.openWritingPipe(addresses[1]); // 00002
+  radio.openReadingPipe(1, addresses[0]); // 00001
+  radio.setPALevel(3);
+  for(int j=0;j<16;j++){
+  messaggio[i]=32;
+  }
+  u8x8.setFont(u8x8_font_chroma48medium8_r);
+}
+String assegna(int b){
+  b=map(b, 0, 1023, 0,28);
+  String a="";
+  switch (b) {
+  case 0: a="a";
+    break;
+  case 1: a="b";
+    break;
+  case 2: a="c";
+    break;
+  case 3: a="d";
+    break;
+  case 4: a="e";
+    break;
+  case 5: a="f";
+    break;
+  case 6: a="g";
+    break;
+  case 7: a="h";
+    break;
+  case 8: a="i";
+    break;
+  case 9: a="j";
+    break;
+  case 10: a="k";
+    break;
+  case 11: a="l";
+    break;
+  case 12: a="m";
+    break;
+  case 13: a="n";
+    break;
+  case 14: a="o";
+    break;
+  case 15: a="p";
+    break;
+  case 16: a="q";
+    break;
+  case 17: a="r";
+    break;
+  case 18: a="s";
+    break;
+  case 19: a="t";
+    break;
+  case 20: a="u";
+    break;
+  case 21: a="v";
+    break;
+  case 22: a="w";
+    break;
+  case 23: a="x";
+    break;
+  case 24: a="y";
+    break;
+  case 25: a="z";
+    break;
+  case 26: a="/";
+    break;
+  case 27: a=" ";
+    break;
+  case 28: a=" ";
+    break;
+  default: a="%";
+  }
+ return a;
+}
+void stampa_layout(){
+  u8x8.setCursor(2, 0);
+  u8x8.print("Bivvol v1.0");
+  u8x8.setInverseFont(1);
+  u8x8.setCursor(0, 2);
+  u8x8.print("alpha");
+  u8x8.setCursor(0, 5);
+  u8x8.print("beta");
+  u8x8.setInverseFont(0);
+}
+unsigned long t1=0;
+void loop() {
+  delay(10);
+  stampa_layout();
+  radio.stopListening();
+  int b= analogRead(A0);
+  int c= analogRead(A1);
+  String a=assegna(b);
+  u8x8.setCursor(i, 3);
+  u8x8.print(a[0]);
+  if(c>1022){
+    messaggio[i]=a[0];
+    u8x8.setCursor(0, 11);
+    u8x8.print(messaggio);
+    i++;
+    if(i==16){
+      i=0;
+    }
+    delay(400);
+    if(a=="/"){
+      u8x8.setCursor(0,11);
+      u8x8.print("                ");
+      i=0;
+      for(int y=0;y<15;y++){
+         messaggio[y]=32;
+      }
+    }
+  } 
+  radio.write(&messaggio, sizeof(messaggio));
+
+  delay(5);
+  radio.startListening();
+  t1=millis();
+  while (!radio.available()&&(millis()-t1)<500);
+  radio.read(&messaggioricevuto, sizeof(messaggioricevuto));
+  u8x8.setCursor(0, 6);
+  u8x8.print(messaggioricevuto);
+}
